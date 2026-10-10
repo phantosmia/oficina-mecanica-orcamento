@@ -1,0 +1,79 @@
+# Ambiente local do Orçamento: LocalStack (DynamoDB, SQS, SNS) + Mailpit
+# (SMTP de teste com caixa de entrada web) + API + worker + relay da outbox.
+# O docker-compose com os 6 microsserviços juntos fica no repositório
+# oficina-mecanica-fiap (OS Service).
+x-orcamento-env: &orcamento-env
+  AWS_ACCESS_KEY_ID: test
+  AWS_SECRET_ACCESS_KEY: test
+  AWS_REGION: us-east-1
+  AWS_ENDPOINT_URL: http://localstack:4566
+  ORCAMENTO_TABLE_NAME: oficina-orcamento
+  ORCAMENTO_EVENTS_TOPIC_ARN: arn:aws:sns:us-east-1:000000000000:orcamento-eventos
+  ORCAMENTO_COMMANDS_QUEUE_URL: http://localstack:4566/000000000000/orcamento-comandos
+  PUBLIC_BASE_URL: http://localhost:8004
+  JWT_SECRET_KEY: change-me-in-production
+  ADMIN_USERNAME: admin
+  SMTP_ENABLED: "true"
+  SMTP_HOST: mailpit
+  SMTP_PORT: "1025"
+  SMTP_FROM: orcamentos@oficina.local
+
+services:
+  localstack:
+    image: localstack/localstack:4
+    container_name: orcamento-localstack
+    environment:
+      SERVICES: dynamodb,sns,sqs
+    ports:
+      - "4569:4566"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: orcamento-mailpit
+    ports:
+      - "8025:8025"   # caixa de entrada: http://localhost:8025
+
+  api:
+    build: .
+    container_name: orcamento-api
+    environment:
+      <<: *orcamento-env
+      BOOTSTRAP_LOCAL_RESOURCES: "true"
+    ports:
+      - "8004:8000"
+    depends_on:
+      localstack:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  worker:
+    build: .
+    container_name: orcamento-worker
+    command: ["worker"]
+    environment:
+      <<: *orcamento-env
+    depends_on:
+      api:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
+  outbox-relay:
+    build: .
+    container_name: orcamento-outbox-relay
+    command: ["relay"]
+    environment:
+      <<: *orcamento-env
+    depends_on:
+      api:
+        condition: service_healthy

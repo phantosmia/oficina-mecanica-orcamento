@@ -1,0 +1,10 @@
+# O cliente abre o link de aprovação de fora do cluster: a API do Orçamento
+# precisa de endereço público (mesmo modo `aws-academy` do OS Service:
+# Service LoadBalancer, sem Ingress/ALB Controller).
+apiVersion: v1
+kind: Service
+metadata:
+  name: orcamento-api
+  namespace: oficina-orcamento
+spec:
+  type: LoadBalancer

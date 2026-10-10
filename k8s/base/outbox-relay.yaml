@@ -1,0 +1,50 @@
+# Relay da outbox: publica no SNS as respostas do worker e as decisões
+# (aprovação/recusa) registradas pela API. Uma réplica só, sem HPA: várias
+# réplicas só gerariam publicações duplicadas.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orcamento-outbox-relay
+  namespace: oficina-orcamento
+  labels:
+    app.kubernetes.io/name: orcamento-outbox-relay
+    app.kubernetes.io/part-of: oficina-mecanica
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: orcamento-outbox-relay
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: orcamento-outbox-relay
+        app.kubernetes.io/part-of: oficina-mecanica
+    spec:
+      containers:
+        - name: relay
+          image: oficina-mecanica-orcamento:latest
+          imagePullPolicy: Always
+          args: ["relay"]
+          envFrom:
+            - configMapRef:
+                name: orcamento-config
+            - secretRef:
+                name: orcamento-secret
+          env:
+            - name: NEW_RELIC_APP_NAME
+              value: oficina-mecanica-orcamento-outbox-relay
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
