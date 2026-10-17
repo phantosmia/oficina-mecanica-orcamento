@@ -1,5 +1,7 @@
 # oficina-mecanica-orcamento
 
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=phantosmia_oficina-mecanica-orcamento&metric=alert_status)](https://sonarcloud.io/summary/overall?id=phantosmia_oficina-mecanica-orcamento) [![Cobertura](https://sonarcloud.io/api/project_badges/measure?project=phantosmia_oficina-mecanica-orcamento&metric=coverage)](https://sonarcloud.io/component_measures?id=phantosmia_oficina-mecanica-orcamento&metric=coverage)
+
 Microsserviço de **Orçamento** do sistema da oficina mecânica (Tech Challenge FIAP, Fase 4): monta o orçamento a partir do diagnóstico do mecânico, envia ao cliente um **link de aprovação** e registra a **aprovação ou recusa**, feita pelo cliente (pelo link) ou pelo admin (em nome dele).
 
 É um dos 6 microsserviços do sistema. A divisão, a saga e o contrato entre os serviços estão documentados no repositório principal, [oficina-mecanica-fiap](https://github.com/phantosmia/oficina-mecanica-fiap):
